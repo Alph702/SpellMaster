@@ -1,30 +1,57 @@
 import { useCallback, useEffect, useRef } from "react";
 
 export function useSound() {
-  const correctSound = useRef(new Audio("https://cdn.freesound.org/sounds/683/683425_12494604-lq.mp3"));
-  const incorrectSound = useRef(new Audio("https://cdn.freesound.org/sounds/683/683424_12494604-lq.mp3"));
+  // Using short, reliable sound effects that work well in web browsers
+  const correctSound = useRef(new Audio("https://www.soundjay.com/button/button-09.mp3"));
+  const incorrectSound = useRef(new Audio("https://www.soundjay.com/button/button-10.mp3"));
 
   useEffect(() => {
-    // Preload sounds
-    correctSound.current.load();
-    incorrectSound.current.load();
+    // Preload sounds and handle errors
+    const preloadSounds = async () => {
+      try {
+        await Promise.all([
+          correctSound.current.load(),
+          incorrectSound.current.load()
+        ]);
+      } catch (error) {
+        console.error("Failed to preload sounds:", error);
+      }
+    };
+
+    preloadSounds();
+
+    // Cleanup
+    return () => {
+      correctSound.current.pause();
+      incorrectSound.current.pause();
+    };
   }, []);
 
   const playCorrect = useCallback(() => {
     try {
       correctSound.current.currentTime = 0;
-      correctSound.current.play().catch(console.error);
+      const playPromise = correctSound.current.play();
+      if (playPromise) {
+        playPromise.catch((error) => {
+          console.error("Failed to play correct sound:", error);
+        });
+      }
     } catch (error) {
-      console.error("Failed to play correct sound:", error);
+      console.error("Error playing correct sound:", error);
     }
   }, []);
 
   const playIncorrect = useCallback(() => {
     try {
       incorrectSound.current.currentTime = 0;
-      incorrectSound.current.play().catch(console.error);
+      const playPromise = incorrectSound.current.play();
+      if (playPromise) {
+        playPromise.catch((error) => {
+          console.error("Failed to play incorrect sound:", error);
+        });
+      }
     } catch (error) {
-      console.error("Failed to play incorrect sound:", error);
+      console.error("Error playing incorrect sound:", error);
     }
   }, []);
 
