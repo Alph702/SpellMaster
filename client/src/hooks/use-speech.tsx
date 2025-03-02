@@ -8,10 +8,23 @@ export function useSpeech() {
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9; // Slightly slower for clarity
+
+    // Get available voices
+    const voices = window.speechSynthesis.getVoices();
+    // Try to find an English voice
+    const englishVoice = voices.find(voice => 
+      voice.lang.startsWith('en') && !voice.name.includes('Microsoft')
+    );
+
+    if (englishVoice) {
+      utterance.voice = englishVoice;
+    }
+
+    // Optimize for speed and clarity
+    utterance.rate = 1.1; // Slightly faster
     utterance.pitch = 1;
     utterance.volume = 1;
-    
+
     window.speechSynthesis.speak(utterance);
   }, []);
 
