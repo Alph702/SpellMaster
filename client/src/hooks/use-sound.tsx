@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
 
 export function useSound() {
-  // Using short, reliable sound effects that work well in web browsers
-  const correctSound = useRef(new Audio("https://www.soundjay.com/button/button-09.mp3"));
-  const incorrectSound = useRef(new Audio("https://www.soundjay.com/button/button-10.mp3"));
+  const correctSound = useRef(new Audio("/correct.mp3"));
+  const incorrectSound = useRef(new Audio("/incorrect.mp3"));
 
   useEffect(() => {
     // Preload sounds and handle errors
@@ -30,6 +29,7 @@ export function useSound() {
   const playCorrect = useCallback(() => {
     try {
       correctSound.current.currentTime = 0;
+      correctSound.current.volume = 0.5; // Lower volume for better user experience
       const playPromise = correctSound.current.play();
       if (playPromise) {
         playPromise.catch((error) => {
@@ -44,6 +44,7 @@ export function useSound() {
   const playIncorrect = useCallback(() => {
     try {
       incorrectSound.current.currentTime = 0;
+      incorrectSound.current.volume = 0.5; // Lower volume for better user experience
       const playPromise = incorrectSound.current.play();
       if (playPromise) {
         playPromise.catch((error) => {
