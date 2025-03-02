@@ -6,17 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useSound } from "@/hooks/use-sound";
+import { useSpeech } from "@/hooks/use-speech";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Volume2 } from "lucide-react";
+
+type PracticeMode = "visual" | "memory";
 
 export default function PracticeInterface() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [letters, setLetters] = useState<string[]>([]);
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>("visual");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { playCorrect, playIncorrect } = useSound();
+  const { speak } = useSpeech();
 
   const { data: words = [], isLoading } = useQuery({
     queryKey: ["/api/words"],
@@ -51,8 +56,13 @@ export default function PracticeInterface() {
       setTimeout(() => {
         inputRefs.current[0]?.focus();
       }, 0);
+
+      // Pronounce the word when starting memory mode
+      if (practiceMode === "memory") {
+        speak(currentWord.word);
+      }
     }
-  }, [currentWord]);
+  }, [currentWord, practiceMode]);
 
   const handleLetterChange = (index: number, value: string) => {
     if (!currentWord) return;
@@ -77,20 +87,40 @@ export default function PracticeInterface() {
 
       if (correct) {
         playCorrect();
+
+        // If in visual mode, move to memory mode
+        // If in memory mode, move to next word and reset to visual mode
+        if (practiceMode === "visual") {
+          setTimeout(() => {
+            setShowFeedback(false);
+            setLetters(new Array(currentWord.word.length).fill(''));
+            setPracticeMode("memory");
+          }, 1500);
+        } else {
+          practiceMutation.mutateAsync({
+            wordId: currentWord.id,
+            correct: true,
+          });
+
+          setTimeout(() => {
+            setShowFeedback(false);
+            setLetters(new Array(currentWord.word.length).fill(''));
+            setPracticeMode("visual");
+            setCurrentWordIndex((prev) => (prev + 1) % words.length);
+          }, 1500);
+        }
       } else {
         playIncorrect();
+        practiceMutation.mutateAsync({
+          wordId: currentWord.id,
+          correct: false,
+        });
+
+        setTimeout(() => {
+          setShowFeedback(false);
+          setLetters(new Array(currentWord.word.length).fill(''));
+        }, 1500);
       }
-
-      practiceMutation.mutateAsync({
-        wordId: currentWord.id,
-        correct,
-      });
-
-      setTimeout(() => {
-        setShowFeedback(false);
-        setLetters(new Array(currentWord.word.length).fill(''));
-        setCurrentWordIndex((prev) => (prev + 1) % words.length);
-      }, 1500);
     }
   };
 
@@ -137,6 +167,11 @@ export default function PracticeInterface() {
                 maxLength={1}
                 disabled={showFeedback}
               />
+              {practiceMode === "visual" && !userLetter && (
+                <span className="absolute text-gray-500 pointer-events-none">
+                  {letter}
+                </span>
+              )}
             </motion.div>
           );
         })}
@@ -161,10 +196,24 @@ export default function PracticeInterface() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Practice Spelling</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          <span>
+            {practiceMode === "visual" ? "Practice Spelling" : "Spell from Memory"}
+          </span>
+          {practiceMode === "memory" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => speak(currentWord.word)}
+              className="h-8 w-8"
+            >
+              <Volume2 className="h-4 w-4" />
+            </Button>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {currentWord?.definition && (
+        {currentWord?.definition && practiceMode === "visual" && (
           <p className="text-sm text-muted-foreground">
             Definition: {currentWord.definition}
           </p>
