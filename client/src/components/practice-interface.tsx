@@ -50,20 +50,32 @@ export default function PracticeInterface() {
     const inputLetters = input.split('');
 
     return (
-      <div className="flex justify-center space-x-1 text-2xl font-mono my-4">
+      <div className="flex justify-center space-x-4 text-3xl font-mono my-8">
         {letters.map((letter, index) => {
-          let className = "px-1 rounded transition-colors duration-200 ";
+          let className = "w-8 h-12 flex items-center justify-center rounded border-2 transition-all duration-200 ";
+
           if (index < input.length) {
+            // Already typed letters
             className += inputLetters[index].toLowerCase() === letter.toLowerCase()
-              ? "bg-primary/20 text-primary"
-              : "bg-destructive/20 text-destructive";
+              ? "border-primary text-primary"
+              : "border-destructive text-destructive";
+          } else if (index === input.length) {
+            // Current letter to type
+            className += "border-blue-500 text-blue-500";
           } else {
-            className += "text-muted-foreground";
+            // Future letters
+            className += "border-gray-500 text-gray-500";
           }
+
           return (
-            <span key={index} className={className}>
+            <motion.span
+              key={index}
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              className={className}
+            >
               {letter}
-            </span>
+            </motion.span>
           );
         })}
       </div>
@@ -139,6 +151,7 @@ export default function PracticeInterface() {
             placeholder="Type the word..."
             disabled={showFeedback}
             className="text-center"
+            autoFocus
           />
           <AnimatePresence>
             {showFeedback && (
