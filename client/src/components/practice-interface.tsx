@@ -17,7 +17,7 @@ export default function PracticeInterface() {
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const { playCorrect, playIncorrect } = useSound();
 
-  const { data: words, isLoading } = useQuery({
+  const { data: words = [], isLoading } = useQuery({
     queryKey: ["/api/words"],
   });
 
@@ -41,7 +41,34 @@ export default function PracticeInterface() {
     },
   });
 
-  const currentWord = words?.[currentWordIndex];
+  const currentWord = words[currentWordIndex];
+
+  // Function to render the word with highlighted letters
+  const renderWord = () => {
+    if (!currentWord) return null;
+    const letters = currentWord.word.split('');
+    const inputLetters = input.split('');
+
+    return (
+      <div className="flex justify-center space-x-1 text-2xl font-mono my-4">
+        {letters.map((letter, index) => {
+          let className = "px-1 rounded transition-colors duration-200 ";
+          if (index < input.length) {
+            className += inputLetters[index].toLowerCase() === letter.toLowerCase()
+              ? "bg-primary/20 text-primary"
+              : "bg-destructive/20 text-destructive";
+          } else {
+            className += "text-muted-foreground";
+          }
+          return (
+            <span key={index} className={className}>
+              {letter}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
 
   const handleSubmit = async () => {
     if (!currentWord) return;
@@ -64,7 +91,7 @@ export default function PracticeInterface() {
     setTimeout(() => {
       setShowFeedback(false);
       setInput("");
-      setCurrentWordIndex((prev) => (prev + 1) % (words?.length || 1));
+      setCurrentWordIndex((prev) => (prev + 1) % words.length);
     }, 1500);
   };
 
@@ -83,7 +110,7 @@ export default function PracticeInterface() {
     return <Skeleton className="h-[200px] w-full" />;
   }
 
-  if (!words?.length) {
+  if (!words.length) {
     return (
       <Alert>
         <AlertDescription>
@@ -104,12 +131,14 @@ export default function PracticeInterface() {
             Definition: {currentWord.definition}
           </p>
         )}
+        {renderWord()}
         <div className="relative">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type the word..."
             disabled={showFeedback}
+            className="text-center"
           />
           <AnimatePresence>
             {showFeedback && (
